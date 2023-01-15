@@ -1,0 +1,1 @@
+when comparing performance with other pcs running this software, use the same binary version as using an alternative compiler or version will modify performance results
