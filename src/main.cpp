@@ -77,7 +77,7 @@ unsigned long long getUserLoopTimes(void) {
 
     std::cout << "\n";
     std::cout << "How many times would you like to run the test\n";
-    std::cout << "Recomended: 1000\n";
+    std::cout << "Recomended: 10000\n";
 
     std::cin >> loopsString;
 
