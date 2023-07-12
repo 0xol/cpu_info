@@ -7,18 +7,18 @@ import string
 #could just drop any form of mac os x support
 
 CC = "g++"
-CCFLAGS = " -O0"
+CCFLAGS = " -O2"
 
 def system(command):
     subprocess.run(str(command), shell=True)
 
-compiler_ver = ((str(subprocess.check_output(CC + " -dumpversion", shell=True)).split("'")[1]).split("\\")[0]).replace(".", "v")
-
-CCFLAGS += ' -UBUILD_PLATFORM -DBUILD_PLATFORM=\\"' + platform.machine() + "_" + platform.system() + "_" + CC.replace("+", "plus") + "_" + compiler_ver + "_" + (''.join(random.choice(string.ascii_letters) for _ in range(8))) + '\\"'
-CCFLAGS += " -pthread"
+CCFLAGS += ""
 
 def compile_file(file, bin):
     print(CC + CCFLAGS + " " + file + " -o " + bin)
-    system(CC + CCFLAGS + " " + file + " -o " + bin)
+    #system(CC + CCFLAGS + " " + file + " -o " + bin)
+    system(f"{CC} -c {file} -o {bin} {CCFLAGS}")
 
-compile_file("src/main.cpp", "cpu.exe")
+compile_file("src/main.cpp", "main.o")
+
+system(f"{CC} *.o -o cpu.exe -lpthread")

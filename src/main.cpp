@@ -3,47 +3,45 @@
 #include <string>
 #include <chrono>
 #include <vector>
+#include <stdint.h>
+#include <math.h>
 
-unsigned char selection;
-unsigned long long loops;
-unsigned long long threadCount;
+#define BUILD_INFO "1.1"
 
-volatile void stdMathTest(unsigned long long loopTimes) {
-    unsigned long long x;
-    unsigned long long y;
-    unsigned long long z;
-
-    for (unsigned long currentLoop = 0; currentLoop < loopTimes * 10000; currentLoop++) {
-        x = 1;
-        y = 2;
-        z = 0;
-        
-        z = x + y;
-        z = y - x;
-        z = x * y;
-        z = y / x;
-        z >> 1;
-        z << 1;
-    }
+unsigned long long timeSinceEpochMillisec() {
+    return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 }
 
-volatile void fpuMathTest(unsigned long long loopTimes) {
-    double x;
-    double y;
-    double z;
+void performStressTest(uint64_t loops) {for (uint64_t x = 0; x < loops; x++) {
+    uint64_t result = pow(x, 2.0);
+    sqrt(result + 1);
+}}
 
-    for (unsigned long currentLoop = 0; currentLoop < loopTimes * 10000; currentLoop++) {
-        x = 1;
-        y = 2;
-        z = 0;
-        
-        z = x + y;
-        z = y - x;
-        z = x * y;
-        z = y / x;
+void performStressTestFloat(uint64_t loops) {for (uint64_t x = 0; x < loops; x++) {
+    double result = powf(x, 2.0);
+    sqrtf(result + 1);
+}}
+
+unsigned long long getUserLoopTimes(void) {
+    unsigned long long loops;
+    std::string loopsString = "";
+
+    std::cout << "\n";
+    std::cout << "How many times would you like to run the test\n";
+    std::cout << "Recomended: 10000\n";
+
+    std::cin >> loopsString;
+
+    try {loops = std::stoi(loopsString);}
+    catch(const std::invalid_argument&) {loops = 0;}
+
+    if (loops == 0) {
+        std::cout << "Invalid loop interger, exiting\n";
+        exit(1);
     }
-}
 
+    return loops;
+}
 
 unsigned char getUserSelectionForTest(void) {
     unsigned char selection;
@@ -71,28 +69,7 @@ unsigned char getUserSelectionForTest(void) {
     return selection;
 }
 
-unsigned long long getUserLoopTimes(void) {
-    unsigned long long loops;
-    std::string loopsString = "";
-
-    std::cout << "\n";
-    std::cout << "How many times would you like to run the test\n";
-    std::cout << "Recomended: 10000\n";
-
-    std::cin >> loopsString;
-
-    try {loops = std::stoi(loopsString);}
-    catch(const std::invalid_argument&) {loops = 0;}
-
-    if (loops == 0) {
-        std::cout << "Invalid loop interger, exiting\n";
-        exit(1);
-    }
-
-    return loops;
-}
-
-unsigned long long getUserThreads(void) {
+unsigned long long getThreads(void) {
     unsigned long long threads;
     std::string threadsString = "";
 
@@ -113,43 +90,33 @@ unsigned long long getUserThreads(void) {
     return threads;
 }
 
-void threadDecider(void) {
+void selectedTask(uint8_t selection, uint64_t loops) {
     switch (selection) {
     case 1:
-        stdMathTest(loops);
+        performStressTest(loops);
     break;
-
     case 2:
-        fpuMathTest(loops);
+        performStressTestFloat(loops);
     break;
-
     case 3:
-        stdMathTest(loops);
-        fpuMathTest(loops);
+        performStressTest(loops);
+        performStressTestFloat(loops);
     break;
     }
 }
 
-unsigned long long timeSinceEpochMillisec() {
-    return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-}
-
 int main(void) {
     std::cout << "Cpu performance test starting\n";
-    std::cout << "Version ID: " << BUILD_PLATFORM << "\n";
-
-    selection = getUserSelectionForTest();
-    loops = getUserLoopTimes();
-    threadCount = getUserThreads();
-
+    std::cout << "Version: " << BUILD_INFO << "\n";
+    
     std::vector<std::thread> threadVector;
-
-    loops = loops / threadCount; //does skip some loops if loops is not perfectly divisble by thread count
-
+    unsigned long long threadCount = getThreads();
+    uint8_t userTest = getUserSelectionForTest();
+    uint64_t loopFor = getUserLoopTimes();
+    
     unsigned long long start = timeSinceEpochMillisec();
-
     for (unsigned long long x = 0; x < threadCount; x++) {
-        threadVector.push_back(std::thread(threadDecider));
+        threadVector.push_back(std::thread(selectedTask, userTest, (loopFor * 50000) / threadCount));
     }
 
     for (unsigned long long x = 0; x < threadCount; x++) {
@@ -158,4 +125,10 @@ int main(void) {
     
     unsigned long long end = timeSinceEpochMillisec();
     std::cout << "Cpu performance test took " << end - start << " ms\n";
+
+    std::cout << "Press CTRL + C to exit" << std::endl;
+    std::string dont_care;
+    std::cin >> dont_care;
+    
+    return 0;
 }
